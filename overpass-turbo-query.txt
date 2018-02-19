@@ -1,0 +1,12 @@
+[bbox:44.890774,-93.000847,44.993612,-92.862771]
+[out:csv("name";false)];
+area[name="Woodbury"];
+way(area)[highway][name];
+out;
+
+
+Google Maps API key: AIzaSyCz5ryOD2HZ5B4WhTadfM7Yza54NuMfTBw
+
+https://maps.googleapis.com/maps/api/geocode/json?address=Woodbury&bounds=44.890774,-93.000847|44.993612,-92.862771&key=AIzaSyCz5ryOD2HZ5B4WhTadfM7Yza54NuMfTBw
+
+Increment by .00025
