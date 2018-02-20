@@ -1,12 +1,7 @@
+import keys
 import requests
 import json
 import pandas as pd
-
-#AIzaSyBFMeWnJ83i8-Bb-UUtJD0HgYhWC7Narys  1901 API key
-#AIzaSyCz5ryOD2HZ5B4WhTadfM7Yza54NuMfTBw  personal API key
-key1901 = 'AIzaSyBb1yDgS5mrnimYWcwnLWApbtgRZFZ1h74'
-keyFuyu = 'AIzaSyCz5ryOD2HZ5B4WhTadfM7Yza54NuMfTBw'
-keyBushido = 'AIzaSyB_PSBGppq3vGjYj01OUNwT7XCtE5-S7Ns'
 
 STARTING_LAT= 44.890929
 LAT_INC  = STARTING_LAT
@@ -22,7 +17,7 @@ while(LAT_INC <= ENDING_LAT):
     while(LONG_INC <= ENDING_LONG):
         increment += 1
         URL_STRING = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" \
-         + str(LAT_INC) + "," + str(LONG_INC) + "&key=" + keyBushido
+         + str(LAT_INC) + "," + str(LONG_INC) + "&key=" + keys.keys['key1901']
 
         r = requests.get(URL_STRING)
         ret = r.json()
