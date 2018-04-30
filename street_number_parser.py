@@ -3,7 +3,7 @@ from shapely.geometry import Point
 import os
 import time
 import keys
-import sectorPolygons7371
+import sectorPolygons1901
 import requests
 import threading
 import json
@@ -71,7 +71,7 @@ class request_getter(threading.Thread):
             numbers = ret['results'][0]['address_components'][0]['short_name']
             streetName = ret['results'][0]['address_components'][1]['short_name']
             try:
-                city = ret['results'][0]['address_components'][2]['short_name']
+                city = ret['results'][0]['address_components'][3]['short_name']
             except:
                 pass
             try:
@@ -231,8 +231,8 @@ class generateSectors(threading.Thread):
 def main(run_type, store_num):
     q = RedisQueue(store_num)
     if run_type == 'gen':
-        for i in range(len(sectorPolygons7371.sectors)):
-            s = generateSectors(sectorPolygons7371.sectors[i], i, q, store_num)
+        for i in range(len(sectorPolygons1901.sectors)):
+            s = generateSectors(sectorPolygons1901.sectors[i], i, q, store_num)
             print('starting this thread')
             s.start()
 
