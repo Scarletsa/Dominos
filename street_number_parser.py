@@ -18,8 +18,6 @@ from time import sleep
 import sys
 from RedisQueue import RedisQueue
 
-
-
 class request_getter(threading.Thread):
     def __init__(self, q, store_num):
         threading.Thread.__init__(self)
