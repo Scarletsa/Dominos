@@ -3,7 +3,7 @@ from shapely.geometry import Point
 import os
 import time
 import keys
-import sectorPolygons1901
+import sectorPolygons1954
 import requests
 import threading
 import json
@@ -16,6 +16,7 @@ import pymongo
 import queue
 from time import sleep
 import sys
+# from geopy.geocoders import Nominatim
 from RedisQueue import RedisQueue
 
 class request_getter(threading.Thread):
@@ -23,7 +24,7 @@ class request_getter(threading.Thread):
         threading.Thread.__init__(self)
         self.q = q
         self.store_num = store_num
-        self.uri = 'mongodb://frog:Treefort@ds251598.mlab.com:51598/streets'
+        self.uri = 'localhost:27017'
         self.client = pymongo.MongoClient(self.uri)
         self.db = self.client['streets']
         self.streets = self.db[self.store_num]
@@ -32,7 +33,7 @@ class request_getter(threading.Thread):
 
 
     def run(self):
-        while (self.keyNum < len(keys.keys)):
+        while (self.q.qsize() > 0):
 
             self.setKey(self.keyNum)
 
@@ -57,19 +58,31 @@ class request_getter(threading.Thread):
 
     def make_request(self, lat, lon):
         # Recent change
+        # geolocator = Nominatim()
+        # location = geolocator.reverse((lat, lon))
         URL_STRING = "https://maps.googleapis.com/maps/api/geocode/json?latlng={},{}&key={}".format(lat, lon, self.key)
         r = requests.get(URL_STRING)
 
         self.requests += 1
         ret = r.json()
+        # print(ret)
         try:
+            # cities = ['Brooklyn Park', 'Champlin', 'Osseo', 'Maple Grove']
             city = ''
             zipcode = ''
 
             numbers = ret['results'][0]['address_components'][0]['short_name']
+            if not numbers.isdigit():
+                return
             streetName = ret['results'][0]['address_components'][1]['short_name']
             try:
-                city = ret['results'][0]['address_components'][3]['short_name']
+                city = ret['results'][0]['address_components'][2]['short_name']
+                if 'Hennepin' in city:
+                    city = ret['results'][0]['address_components'][3]['short_name']
+                    if 'Hennepin' in city:
+                        city = ret['results'][0]['address_components'][4]['short_name']
+                        if 'Hennepin' in city:
+                            return
             except:
                 pass
             try:
@@ -90,16 +103,6 @@ class request_getter(threading.Thread):
                     startEnd[1] = temp
 
                 if (int(startEnd[0]) <= int(startEnd[1])):
-                    if ("MN-3" in streetName):
-                        streetName = "S Robert Trail"
-
-                    if ("County" in streetName):
-                        if ("Rd 56" in streetName):
-                            streetName = "Concord Blvd E"
-                        elif ("Rd 73" in streetName):
-                            streetName = "Babcock Trail"
-                        elif ("Rd 18" in streetName):
-                            streetName = "Upper 55th St E"
 
                     #print(str(self.requests) + " " + self.sectorName + " " + str(lat) + "," + str(lon) + " start:" + str(startEnd[0]) + " end:" + str(startEnd[1]) + " " + streetName + ", " + city + " " + zipcode)
                     self.addresses.append((self.sectorName, str(lat), str(lon), str(startEnd[0]), str(startEnd[1]), streetName, city, zipcode))
@@ -125,7 +128,10 @@ class request_getter(threading.Thread):
                             "longitude": lon
                         }
                     }
-
+                    # print()
+                    # print('============================')
+                    # print(jsob)
+                    # input()
                     result = self.streets.replace_one(filt, jsob, True)
 
         except IndexError:
@@ -155,7 +161,7 @@ class generateSectors(threading.Thread):
         self.polygon = sector
         self.requests = 0
         self.addresses = []
-        self.uri = 'mongodb://frog:Treefort@ds251598.mlab.com:51598/streets'
+        self.uri = 'localhost:27017'
         self.client = pymongo.MongoClient(self.uri)
         self.db = self.client['streets']
         self.store_num = store_num
@@ -229,20 +235,21 @@ class generateSectors(threading.Thread):
 def main(run_type, store_num):
     q = RedisQueue(store_num)
     if run_type == 'gen':
-        for i in range(len(sectorPolygons1901.sectors)):
-            s = generateSectors(sectorPolygons1901.sectors[i], i, q, store_num)
-            print('starting this thread')
+        for i in range(len(sectorPolygons1954.sectors)):
+            s = generateSectors(sectorPolygons1954.sectors[i], i, q, store_num)
+            print('starting thread ' + str(i))
             s.start()
 
     elif run_type == 'run':
-        uri = 'mongodb://frog:Treefort@ds251598.mlab.com:51598/streets'
+        batch_size = 30
+        uri = 'localhost:27017'
         client = pymongo.MongoClient(uri)
         db = client['streets']
         streets = db[store_num]
         streets.create_index([("latitude", pymongo.DESCENDING), ("longitude",  pymongo.DESCENDING)])
-        for i in range(30):
+        for i in range(int(batch_size)):
             rg = request_getter(q, store_num)
-            print('starting request thread')
+            print('starting request thread '  + str(i))
             rg.start()
 
         while q.qsize():
